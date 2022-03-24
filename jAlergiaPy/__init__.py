@@ -1,0 +1,1 @@
+from .Alergia import run_JAlergia
