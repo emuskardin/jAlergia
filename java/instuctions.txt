@@ -1,4 +1,0 @@
-Put Alergia.java and META-INF\MANIFEST.MF and in a folder
-javac -d . *.java
-jar cfm alergia.jar META-INF\MANIFEST.MF *.class
-java -jar .\alergia.jar

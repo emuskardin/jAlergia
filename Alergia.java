@@ -22,14 +22,12 @@ class FptaNode{
     // for visualization
     public String stateId;
     public Map<String, Double> childrenProbability;
-    public static int couter = 0;
 
     public FptaNode(String o){
         this.output = o;
         this.prefix = new ArrayList<>(1);
         this.children = new TreeMap<>();
         this.inputFrequency = new TreeMap<>();
-        couter ++;
     }
 
     static String getFromStrCache(String str){
@@ -205,13 +203,20 @@ public class Alergia {
         epsilon = eps;
         saveLocation = saveFile;
 
+        double start = System.currentTimeMillis();
         List<FptaNode> ta = Parser.parseFile(pathToFile, modelType);
-        System.out.println("IOFPTA constructed.");
+        double timeElapsed = System.currentTimeMillis() - start;
+        System.out.println("IOFPTA construction time : " + String.format("%.2f", timeElapsed / 1000) + " seconds.");
         t = ta.get(0);
         a = ta.get(1);
+        start = System.currentTimeMillis();
+        int modelSize = run();
+        timeElapsed = System.currentTimeMillis() - start;
+        System.out.println("Alergia learning time    : " + String.format("%.2f", timeElapsed / 1000) + " seconds.");
+        System.out.println("Alergia learned " + modelSize + " state automaton.");
     }
 
-    private void run() {
+    private int run() {
         List<FptaNode> red = new ArrayList<>();
         red.add(a);
         List<FptaNode> blue = new ArrayList<>(a.getSuccessors());
@@ -235,6 +240,7 @@ public class Alergia {
             Set<List<String>> prefixesInRed = new HashSet<>();
             for(FptaNode r:red)
                 prefixesInRed.add(r.prefix);
+
             for(FptaNode r:red){
                 for (FptaNode s : r.getSuccessors()){
                     if(!prefixesInRed.contains(s.prefix))
@@ -245,6 +251,7 @@ public class Alergia {
 
         normalize(red);
         Parser.saveModel(red, modelType, saveLocation);
+        return red.size();
     }
 
     private void merge(FptaNode r, FptaNode lexMinBlue) {
@@ -265,9 +272,10 @@ public class Alergia {
         for (String io : blue.children.keySet()){
             if(red.children.containsKey(io)){
                 red.inputFrequency.put(io, red.inputFrequency.get(io) + blue.inputFrequency.get(io));
+
                 fold(red.children.get(io), blue.children.get(io));
             }else{
-                red.children.put(io, blue);
+                red.children.put(io, blue.children.get(io));
                 red.inputFrequency.put(io, blue.inputFrequency.get(io));
             }
         }
@@ -378,6 +386,7 @@ public class Alergia {
         String saveLocation = (String) argValues.get(3);
 
         Alergia a = new Alergia(path, eps, type, saveLocation);
-        a.run();
+
+        System.exit(0);
     }
 }
