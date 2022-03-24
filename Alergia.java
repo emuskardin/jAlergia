@@ -12,20 +12,28 @@ enum ModelType{
     MC,
 }
 
+class ParentInput{
+    FptaNode parent;
+    String inputOutput;
+    public ParentInput(FptaNode p, String io){
+        parent = p;
+        inputOutput = io;
+    }
+}
+
 class FptaNode{
     public static HashMap<String, String> stringCache = new HashMap<>();
 
     public String output;
-    public List<String> prefix;
     public Map<String, FptaNode> children;
     public Map<String, Integer> inputFrequency;
+    public ParentInput parentInputPair;
     // for visualization
     public String stateId;
     public Map<String, Double> childrenProbability;
 
     public FptaNode(String o){
         this.output = o;
-        this.prefix = new ArrayList<>(1);
         this.children = new TreeMap<>();
         this.inputFrequency = new TreeMap<>();
     }
@@ -36,7 +44,13 @@ class FptaNode{
     }
 
     public List<String> getPrefix(){
-
+        List<String> prefix = new ArrayList<>();
+        FptaNode p = this;
+        while (p.parentInputPair.parent != null) {
+            prefix.add(0, p.parentInputPair.inputOutput);
+            p = p.parentInputPair.parent;
+        }
+        return prefix;
     }
 
     public Collection<? extends FptaNode> getSuccessors() {
@@ -60,7 +74,9 @@ class Parser{
                 if(notInit) {
                     FptaNode.getFromStrCache(sample.get(0));
                     rootNode = new FptaNode(sample.get(0));
+                    rootNode.parentInputPair = new ParentInput(null, null);
                     rootCopy = new FptaNode(sample.get(0));
+                    rootCopy.parentInputPair = new ParentInput(null, null);
                     notInit = false;
                 }
                 addToFpta(rootNode, rootCopy, sample, modelType);
@@ -135,14 +151,12 @@ class Parser{
                 io = FptaNode.getFromStrCache(io);
                 if(!currNode.children.containsKey(io)){
                     FptaNode node = new FptaNode(sample.get(i+startingIndex));
-                    node.prefix = new ArrayList<>(currNode.prefix);
-                    node.prefix.add(io);
+                    node.parentInputPair = new ParentInput(currNode, io);
                     currNode.children.put(io, node);
 
                     // Copy
                     FptaNode copy = new FptaNode(sample.get(i+startingIndex));
-                    copy.prefix = new ArrayList<>(currCopy.prefix);
-                    copy.prefix.add(io);
+                    copy.parentInputPair = new ParentInput(currCopy, io);
                     currCopy.children.put(io, copy);
                 }
 
@@ -243,11 +257,11 @@ public class Alergia {
             blue.clear();
             Set<List<String>> prefixesInRed = new HashSet<>();
             for(FptaNode r:red)
-                prefixesInRed.add(r.prefix);
+                prefixesInRed.add(r.getPrefix());
 
             for(FptaNode r:red){
                 for (FptaNode s : r.getSuccessors()){
-                    if(!prefixesInRed.contains(s.prefix))
+                    if(!prefixesInRed.contains(s.getPrefix()))
                         blue.add(s);
                 }
             }
@@ -260,7 +274,7 @@ public class Alergia {
 
     private void merge(FptaNode r, FptaNode lexMinBlue) {
         FptaNode blueNode = getBlueNode(lexMinBlue);
-        List<String> prefixLeadingToState = new ArrayList<>(lexMinBlue.prefix);
+        List<String> prefixLeadingToState = new ArrayList<>(lexMinBlue.getPrefix());
         String lastIo = prefixLeadingToState.remove(prefixLeadingToState.size() - 1);
 
         FptaNode toUpdate = a;
@@ -330,7 +344,7 @@ public class Alergia {
     private void insertInLexMinSort(List<FptaNode> redList, FptaNode blue){
         int index = 0;
         for (FptaNode r : redList){
-            if(r.prefix.size() < blue.prefix.size()){
+            if(r.getPrefix().size() < blue.getPrefix().size()){
                 index += 1;
             }else{
                 break;
@@ -342,7 +356,7 @@ public class Alergia {
     private FptaNode getLexMin(List<FptaNode> x){
         FptaNode min = x.get(0);
         for (FptaNode node: x) {
-            if(node.prefix.size() < min.prefix.size())
+            if(node.getPrefix().size() < min.getPrefix().size())
                 min = node;
         }
         return min;
@@ -350,7 +364,7 @@ public class Alergia {
 
     private FptaNode getBlueNode(FptaNode redNode){
         FptaNode blueNode = t;
-        for(String p : redNode.prefix)
+        for(String p : redNode.getPrefix())
             blueNode = blueNode.children.get(p);
         return blueNode;
     }
