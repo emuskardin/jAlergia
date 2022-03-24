@@ -35,6 +35,10 @@ class FptaNode{
         return FptaNode.stringCache.get(str);
     }
 
+    public List<String> getPrefix(){
+
+    }
+
     public Collection<? extends FptaNode> getSuccessors() {
         return this.children.values();
     }
@@ -315,7 +319,7 @@ public class Alergia {
                double aFreq = a.inputFrequency.getOrDefault(o, 0);
                double bFreq = b.inputFrequency.getOrDefault(o, 0);
 
-               if(abs(aFreq / n1 - bFreq / n2) > (sqrt(1./n1) + sqrt(1./n2)) * sqrt(0.5 * log(2 / epsilon)))
+               if(abs(aFreq / n1 - bFreq / n2) > ((sqrt(1./n1) + sqrt(1./n2)) * sqrt(0.5 * log(2 / epsilon))))
                    return false;
             }
         }
