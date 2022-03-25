@@ -1,0 +1,12 @@
+plugins {
+    id 'java'
+}
+
+group 'emuskardin'
+
+jar {
+    destinationDir = file("$rootDir")
+    manifest {
+        attributes 'Main-Class': 'Alergia'
+    }
+}
