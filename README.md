@@ -1,5 +1,5 @@
 # jAlergia - Alergia passive automaton learning
-<hr>
+
 **jAlergia** is minimal and efficient implementation of ALERGIA automaton learning algorithm in Java. 
 It is developed without any dependencies and can be used either in code or from command line. 
 
@@ -11,10 +11,13 @@ jAlergia supports passive learning of
 - [Stochastic Mealy Machines](https://link.springer.com/chapter/10.1007/978-3-030-92124-8_27)
 - [Markov Chains](https://en.wikipedia.org/wiki/Markov_chain)
 
-# Usage
+![Passive Learning Process](https://github.com/DES-Lab/AALpy/blob/master/docs/passiveLearning.png)
+
+## Usage
 
 ### Command line
 ```
+# Compile your own jar
 git clone https://github.com/emuskardin/jAlergia
 gradlew jar
 # gradlew.bat on Windows
@@ -55,6 +58,27 @@ model = run_JAlergia(path_to_data_file='jAlergia/exampleMdpData.txt', automaton_
 
 visualize_automaton(model)
 ```
+
+## Input file syntax
+Input files should follow the same syntax as defined in [AALpy's Wiki](https://github.com/DES-Lab/AALpy/wiki/Passive-Learning-of-Stochastic-Automata).
+Following is the example of MDP input file. Note that numbers indicate inputs and capital character outputs.
+```
+C,0,A,1,A,0,B,1,C,1,A,1,C,0,D,0,C,0,A,1,C,1,A,1,C
+C,1,B,0,C,1,A,0,B,0,C,0,D,0,C,1,A
+C,0,A,1,A,1,A,0,B,0,C,1,A,1,C,0,D,0,C,1,B
+C,1,B,1,D,1,C,0,D,0,C,0,A,1,C,1,C,0,D,1,C
+...
+```
+Following the same logic, Markov chain input files would be sequences of inputs:
+```
+1,2,3,4,1,2,3,15,1,2,4
+1,3,4,2,2,1,5,7,2,5
+1,7,4,7,2,9,4,2,8,5
+...
+```
+Stochastic Mealy machine input files follow the same syntax as MDP input file, just without
+the initial output.
+
 
 ## Cite AALpy and Research Contact
 

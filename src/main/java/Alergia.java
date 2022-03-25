@@ -259,7 +259,7 @@ public class Alergia {
     }
 
     public static void usageExample(){
-        String path = "sampleFiles/mdpData2.txt";
+        String path = "sampleFiles/mdpData1.txt";
         double eps = 0.005;
         ModelType type = ModelType.MDP;
         String saveLocation = "jAlergiaModel";
@@ -267,6 +267,8 @@ public class Alergia {
 
         Alergia a = new Alergia(path, eps, type, saveLocation, optimizeFor);
         a.runAlergia();
+
+        System.exit(0);
     }
 
     public static void main(String[] args) {
