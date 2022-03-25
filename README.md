@@ -17,7 +17,7 @@ jAlergia supports passive learning of
 
 ### Command line
 ```
-# Compile your own jar
+# Compile your own jar or download it from the repo
 git clone https://github.com/emuskardin/jAlergia
 gradlew jar
 # gradlew.bat on Windows
@@ -80,7 +80,7 @@ Stochastic Mealy machine input files follow the same syntax as MDP input file, j
 the initial output.
 
 
-## Cite AALpy and Research Contact
+## Cite jAlergia and Research Contact
 
 jAlergia is a twin implementation of [AALpy's Alergia implementation](https://github.com/DES-Lab/AALpy/blob/master/aalpy/learning_algs/stochastic_passive/Alergia.py),
 and it is maintained as a part of the please cite:
