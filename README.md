@@ -98,5 +98,4 @@ AALpy library. If you use jAlergia in the research context, please cite:
 }
 ```
 If you have research suggestions, or you need specific help concerning your research, feel free to start a [discussion](https://github.com/DES-Lab/AALpy/discussions) or contact [edi.muskardin@silicon-austria.com](mailto:edi.muskardin@silicon-austria.com).
-We are happy to help you and consult you in applying automata learning in various domains.
-se open issues.
+I am happy to help you and consult you in applying automata learning in various domains.
