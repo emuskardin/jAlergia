@@ -40,6 +40,7 @@ public class Alergia {
         List<FptaNode> ta = FptaNode.constructFPTA(data, modelType, this.optimizeFor);
         double timeElapsed = System.currentTimeMillis() - start;
         System.out.println("FPTA construction time   : " + String.format("%.2f", timeElapsed / 1000) + " seconds.");
+        data = null; // to ensure GC will collect it soon
 
         a = ta.get(0);
         t = ta.get(1);
@@ -216,7 +217,7 @@ public class Alergia {
     }
 
     public static void usageExample(){
-        String path = "sampleFiles/mdpData1.txt";
+        String path = "sampleFiles/mdpData2.txt";
         double eps = 0.005;
         ModelType type = ModelType.MDP;
         String saveLocation = "jAlergiaModel";
@@ -230,7 +231,6 @@ public class Alergia {
     }
 
     public static void main(String[] args) {
-        usageExample();
         List<Object> argValues = Parser.parseArgs(args);
 
         String path = (String) argValues.get(0);
@@ -240,7 +240,7 @@ public class Alergia {
         OptimizeFor optimizeFor = (OptimizeFor) argValues.get(4);
 
         List<List<String>> data = Parser.parseFile(path);
-        Alergia a = new Alergia();
+        Alergia a = new Alergia(saveLocation);
         a.runAlergia(data, type, eps, optimizeFor);
         System.exit(0);
     }

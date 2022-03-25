@@ -21,7 +21,7 @@ jAlergia supports passive learning of
 git clone https://github.com/emuskardin/jAlergia
 gradlew jar
 # gradlew.bat on Windows
-java -jar alergia.jar -path sampleFiles/mdpData1.txt -type mdp
+java -jar alergia.jar -input sampleFiles/mdpData1.txt -type mdp
 or
 java -jar alergia.jar -help // for more details
 # in case you run out of memory during FPTA construction, extend it with -Xmx12g
@@ -31,14 +31,15 @@ java -jar alergia.jar -help // for more details
 ```java
 class AlergiaExample {
     public static void main() {
-        String path = "sampleFiles/mdpData2.txt"; // path to input file
-        double eps = 0.005; // epsilon used in Hoeffding compatibility check
+        String path = "sampleFiles/mdpData2.txt";
+        double eps = 0.005;
         ModelType type = ModelType.MDP;
         String saveLocation = "jAlergiaModel";
-        OptimizeFor optimizeFor = OptimizeFor.ACCURACY; // learn as precise as possible
+        OptimizeFor optimizeFor = OptimizeFor.ACCURACY;
 
-        Alergia a = new Alergia(path, eps, type, saveLocation, optimizeFor);
-        a.runAlergia();
+        List<List<String>> data = Parser.parseFile(path);
+        Alergia a = new Alergia();
+        a.runAlergia(data, type, eps, optimizeFor);
     }
 }
 ```

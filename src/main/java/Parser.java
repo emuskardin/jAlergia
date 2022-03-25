@@ -7,12 +7,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-class CW{
-    List<List<String>> data;
-    public CW(List<List<String>> d){
-        d = data;
-    }
-}
 
 class Parser{
 
@@ -21,7 +15,7 @@ class Parser{
             "https://github.com/emuskardin/jAlergia and https://github.com/DES-Lab/AALpy/wiki/Passive-Learning-of-Stochastic-Automata\n" +
             "If heap is overflown during IOFPTA construction, consider extending it with -Xmx12G.\n\n" +
             "Mandatory arguments\n" +
-            "\t-path <pathToInputFile> - file needs to conform to above mentioned syntax\n" +
+            "\t-input <pathToInputFile> - file needs to conform to above mentioned syntax\n" +
             "\t-type <modelType> - either mdp, smm, or mc; If you want to learn Markov Decision Process, Stochastic Mealy Machine, or Markov Chain\n" +
             "Optional arguments\n" +
             "\t-eps <doubleVal> - value of the epsilon constant in Hoeffding compatibility check. Default: 0.005\n" +
@@ -35,21 +29,21 @@ class Parser{
         String saveLocation = "jAlergiaModel";
         OptimizeFor optimizeFor = OptimizeFor.ACCURACY;
 
-        HashSet<String> argNames = new HashSet<>(Arrays.asList("-eps", "-path", "-type", "-save", "-optim"));
-        if(args[0].equals("-help") || args[0].equals("-h") || args[0].equals("--help")){
+        HashSet<String> argNames = new HashSet<>(Arrays.asList("-eps", "-input", "-type", "-save", "-optim"));
+        if(args.length == 0 || args[0].equals("-help") || args[0].equals("-h") || args[0].equals("--help")){
             System.out.println(helpDisplayMessage);
             System.exit(0);
         }
         for (int i = 0; i < args.length - 1; i+=2) {
             if(!argNames.contains(args[i])) {
-                System.out.println("Unrecognized option '" + args[i] + "'.\nRun Use -h to see all arguments.");
+                System.out.println("Unrecognized option '" + args[i] + "'.\nRun Use -help to see all arguments.");
                 System.exit(1);
             }
 
             if(args[i].equals("-eps")){
                 try {
                     eps = Double.parseDouble(args[i+1]);
-                    if(eps > 2 || eps < 0){
+                    if(eps > 2 || eps <= 0){
                         System.out.println("Epsilon values must be a double in range of [2,0>");
                         System.exit(1);
                     }
@@ -58,7 +52,7 @@ class Parser{
                     e.printStackTrace();
                 }
             }
-            if(args[i].equals("-path"))
+            if(args[i].equals("-input"))
                 path = args[i+1];
             if(args[i].equals("-type")){
                 switch (args[i + 1]) {
