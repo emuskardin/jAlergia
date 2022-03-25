@@ -2,9 +2,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+
+class CW{
+    List<List<String>> data;
+    public CW(List<List<String>> d){
+        d = data;
+    }
+}
 
 class Parser{
 
@@ -19,39 +27,6 @@ class Parser{
             "\t-eps <doubleVal> - value of the epsilon constant in Hoeffding compatibility check. Default: 0.005\n" +
             "\t-save <saveFileName> - file in which learned model will be saved. Default: jAlergiaModel\n" +
             "\t-optim <optimType> - either mem or acc, to optimize for memory usage or learned model accuracy.";
-
-    public static List<FptaNode> parseFile(String path, ModelType modelType, OptimizeFor optimizeFor){
-        FptaNode rootNode = null;
-        FptaNode rootCopy = null;
-        boolean notInit = true;
-
-        try {
-            List<String> fileLines = Files.readAllLines(Paths.get(path));
-            for (String line : fileLines) {
-                if(line.isEmpty())
-                    continue;
-                List<String> sample = Arrays.asList(line.split(","));
-                if(notInit) {
-                    notInit = false;
-
-                    FptaNode.getFromStrCache(sample.get(0));
-                    rootNode = new FptaNode(sample.get(0));
-                    rootNode.parentInputPair = new ParentInputPair(null, null);
-
-                    if(optimizeFor == OptimizeFor.ACCURACY) {
-                        rootCopy = new FptaNode(sample.get(0));
-                        rootCopy.parentInputPair = new ParentInputPair(null, null);
-                    }
-                }
-                addToFpta(rootNode, rootCopy, sample, modelType, optimizeFor);
-
-            }
-        } catch (IOException e) {
-            System.out.println("File could not be opened.");
-            e.printStackTrace();
-        }
-        return Arrays.asList(rootNode, rootCopy);
-    }
 
     public static List<Object> parseArgs(String[] args){
         double eps = 0.005;
@@ -126,46 +101,22 @@ class Parser{
         return Arrays.asList(path, eps, type, saveLocation, optimizeFor);
     }
 
+    public static List<List<String>> parseFile(String path){
+        List<List<String>> data = new ArrayList<>();
 
-    public static void addToFpta(FptaNode rootNode, FptaNode rootCopy, List<String> sample, ModelType modelType, OptimizeFor optimizeFor){
-        FptaNode currNode = rootNode;
-        FptaNode currCopy = rootCopy;
-
-        int startingIndex = modelType == ModelType.MDP ? 1 : 0;
-        int incrementSize = modelType == ModelType.MC ? 1 : 2;
-
-        if(modelType != ModelType.SMM) {
-            if (!sample.get(0).equals(currNode.output))
-                System.exit(1);
-        }
-
-        for (int i = startingIndex; i < sample.size() - 1; i+=incrementSize){
-            String io = modelType != ModelType.MC ? sample.get(i) + '/' + sample.get(i+1) : sample.get(i);
-            io = FptaNode.getFromStrCache(io);
-            if(!currNode.children.containsKey(io)){
-                FptaNode node = new FptaNode(sample.get(i+startingIndex));
-                node.parentInputPair = new ParentInputPair(currNode, io);
-                currNode.children.put(io, node);
-
-                // Copy
-                if(optimizeFor == OptimizeFor.ACCURACY) {
-                    FptaNode copy = new FptaNode(sample.get(i + startingIndex));
-                    copy.parentInputPair = new ParentInputPair(currCopy, io);
-                    currCopy.children.put(io, copy);
-                }
+        try {
+            for (String line : Files.readAllLines(Paths.get(path))) {
+                if(line.isEmpty())
+                    continue;
+                data.add(Arrays.asList(line.split(",")));
             }
-
-            currNode.inputFrequency.put(io, currNode.inputFrequency.getOrDefault(io, 0) + 1);
-            currNode = currNode.children.get(io);
-
-            // Copy
-            if(optimizeFor == OptimizeFor.ACCURACY) {
-                currCopy.inputFrequency.put(io, currCopy.inputFrequency.getOrDefault(io, 0) + 1);
-                currCopy = currCopy.children.get(io);
-            }
+        } catch (IOException e) {
+            System.out.println("jAlergia Error: Input file could not be opened.");
+            e.printStackTrace();
+            System.exit(1);
         }
+        return data;
     }
-
 
     public static void saveModel(List<FptaNode> red, ModelType modelType, String saveLocation) {
         FileWriter fw;

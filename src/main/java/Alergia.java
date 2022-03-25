@@ -13,80 +13,37 @@ enum OptimizeFor{
     ACCURACY
 }
 
-class ParentInputPair {
-    FptaNode parent;
-    String inputOutput;
-    public ParentInputPair(FptaNode p, String io){
-        parent = p;
-        inputOutput = io;
-    }
-}
-
-class FptaNode{
-    public static HashMap<String, String> stringCache = new HashMap<>();
-
-    public String output;
-    public Map<String, FptaNode> children;
-    public Map<String, Integer> inputFrequency;
-    public ParentInputPair parentInputPair;
-
-    // for writing to file
-    public String stateId;
-    public Map<String, Double> childrenProbability;
-
-    public FptaNode(String o){
-        this.output = o;
-        this.children = new TreeMap<>();
-        this.inputFrequency = new TreeMap<>();
-    }
-
-    static String getFromStrCache(String str){
-        FptaNode.stringCache.putIfAbsent(str, str);
-        return FptaNode.stringCache.get(str);
-    }
-
-    public List<String> getPrefix(){
-        List<String> prefix = new ArrayList<>();
-        FptaNode p = this;
-        while (p.parentInputPair.parent != null) {
-            prefix.add(0, p.parentInputPair.inputOutput);
-            p = p.parentInputPair.parent;
-        }
-        return prefix;
-    }
-
-    public Collection<? extends FptaNode> getSuccessors() {
-        return this.children.values();
-    }
-}
-
-
-
 public class Alergia {
 
     private FptaNode t = null;
     private FptaNode a = null;
-    private final double epsilon;
-    private final ModelType modelType;
-    private final String filePath;
+    private double epsilon;
+    private ModelType modelType;
+    private String filePath;
     private final String saveLocation;
-    private final OptimizeFor optimizeFor;
+    private OptimizeFor optimizeFor;
 
-    public Alergia(String pathToFile, double eps, ModelType type, String saveFile, OptimizeFor optim){
-        modelType = type;
-        epsilon = eps;
-        saveLocation = saveFile;
-        optimizeFor = optim;
-        filePath = pathToFile;
+    public Alergia(){
+        saveLocation = "jAlergiaModel";
     }
 
-    public void runAlergia(){
+    public Alergia(String saveFile){
+        saveLocation = saveFile;
+    }
+
+    public void runAlergia(List<List<String>> data, ModelType type, double eps, OptimizeFor optim){
+        epsilon = eps;
+        modelType = type;
+        optimizeFor = optim;
+
         double start = System.currentTimeMillis();
-        List<FptaNode> ta = Parser.parseFile(filePath, modelType, optimizeFor);
+        List<FptaNode> ta = FptaNode.constructFPTA(data, modelType, this.optimizeFor);
         double timeElapsed = System.currentTimeMillis() - start;
         System.out.println("FPTA construction time   : " + String.format("%.2f", timeElapsed / 1000) + " seconds.");
+
         a = ta.get(0);
         t = ta.get(1);
+
         start = System.currentTimeMillis();
         int modelSize = run();
         timeElapsed = System.currentTimeMillis() - start;
@@ -265,22 +222,26 @@ public class Alergia {
         String saveLocation = "jAlergiaModel";
         OptimizeFor optimizeFor = OptimizeFor.ACCURACY;
 
-        Alergia a = new Alergia(path, eps, type, saveLocation, optimizeFor);
-        a.runAlergia();
+        List<List<String>> data = Parser.parseFile(path);
+        Alergia a = new Alergia(saveLocation);
+        a.runAlergia(data, type, eps, optimizeFor);
 
         System.exit(0);
     }
 
     public static void main(String[] args) {
+        usageExample();
         List<Object> argValues = Parser.parseArgs(args);
+
         String path = (String) argValues.get(0);
         double eps = (Double) argValues.get(1);
         ModelType type = (ModelType) argValues.get(2);
         String saveLocation = (String) argValues.get(3);
         OptimizeFor optimizeFor = (OptimizeFor) argValues.get(4);
 
-        Alergia a = new Alergia(path, eps, type, saveLocation, optimizeFor);
-        a.runAlergia();
+        List<List<String>> data = Parser.parseFile(path);
+        Alergia a = new Alergia();
+        a.runAlergia(data, type, eps, optimizeFor);
         System.exit(0);
     }
 }
