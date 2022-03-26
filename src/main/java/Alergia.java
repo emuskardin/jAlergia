@@ -225,7 +225,6 @@ public class Alergia {
     }
 
     public static void main(String[] args) {
-        usageExample();
         List<Object> argValues = Parser.parseArgs(args);
 
         String path = (String) argValues.get(0);
