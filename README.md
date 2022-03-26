@@ -1,7 +1,7 @@
 # jAlergia - Alergia passive automaton learning
 
-**jAlergia** is minimal and efficient implementation of ALERGIA automaton learning algorithm in Java. 
-It is developed without any dependencies and can be used either in code or from command line. 
+**jAlergia** is minimal, modular, and efficient implementation of ALERGIA automaton learning algorithm in Java. 
+It is developed without any dependencies and can be used either with your code or from command line. 
 
 Learned models are saved in the .dot format and can be visualized with [graphviz](https://graphviz.org/) and used with [AALpy](https://github.com/DES-Lab/AALpy).
 AALpy also includes python bindings to jAlergia .jar file.
@@ -21,13 +21,14 @@ jAlergia supports passive learning of
 git clone https://github.com/emuskardin/jAlergia
 gradlew jar
 # gradlew.bat on Windows
-java -jar alergia.jar -input sampleFiles/mdpData1.txt -type mdp
-or
-java -jar alergia.jar -help // for more details
-# in case you run out of memory during FPTA construction, extend it with -Xmx12g
+java -jar alergia.jar -help
+java -jar alergia.jar -input .\sampleFiles\mdpData1.txt -type mdp
+# in case you run out of memory during FPTA construction
+# - exten JVM memory with -Xmx, eg. -Xmx12g 
+# - and/or set -optim to 'mem'
 ```
 
-### In code
+### Code
 ```java
 class AlergiaExample {
     public static void main() {
