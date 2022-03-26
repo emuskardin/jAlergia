@@ -54,9 +54,8 @@ an open source active automata learning library written in Python.
 from aalpy.learning_algs import run_JAlergia
 from aalpy.utils import visualize_automaton
 
-# if you need more heapreplace check
-model = run_JAlergia(path_to_data_file='jAlergia/exampleMdpData.txt', automaton_type='mdp', eps=0.005,
-                     path_to_jAlergia_jar='jAlergia/alergia.jar')
+model = run_JAlergia(path_to_data_file='/sampleFiles/mdpData1.txt.txt', automaton_type='mdp', eps=0.005,
+                     path_to_jAlergia_jar='alergia.jar')
 
 visualize_automaton(model)
 ```
