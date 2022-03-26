@@ -1,5 +1,8 @@
 import java.util.*;
 
+/**
+ * Heper class to keep track of parent nodes. Used for computing prefixes of nodes.
+ */
 class ParentInputPair {
     FptaNode parent;
     String inputOutput;
@@ -9,6 +12,10 @@ class ParentInputPair {
     }
 }
 
+/**
+ * Frequency prefix tree acceptor (FPTA) node class.
+ * Each node hold references to its children and other needed information.
+ */
 class FptaNode{
     public static HashMap<String, String> stringCache = new HashMap<>();
 
@@ -27,11 +34,19 @@ class FptaNode{
         this.inputFrequency = new TreeMap<>();
     }
 
+    /**
+     * String cache to ensure that same references are used for same strings.
+     * @param str string
+     * @return string instance from String cache
+     */
     static String getFromStrCache(String str){
         FptaNode.stringCache.putIfAbsent(str, str);
         return FptaNode.stringCache.get(str);
     }
 
+    /**
+     * @return path from root node to current node
+     */
     public List<String> getPrefix(){
         List<String> prefix = new ArrayList<>();
         FptaNode p = this;
@@ -42,10 +57,20 @@ class FptaNode{
         return prefix;
     }
 
+    /**
+     * @return successor of the node
+     */
     public Collection<? extends FptaNode> getSuccessors() {
         return this.children.values();
     }
 
+    /**
+     * Construct mutable and immutable trees.
+     * @param data list of lists of strings conforming to syntax defined at https://github.com/emuskardin/jAlergia
+     * @param modelType mdp, smm, or mc
+     * @param optimizeFor if optimize for memory is used, only mutable tree will be created
+     * @return mutable and immutable trees (second tree is set to null in case of memory optimization)
+     */
     public static List<FptaNode> constructFPTA(List<List<String>> data, ModelType modelType, OptimizeFor optimizeFor){
         FptaNode rootNode = new FptaNode(FptaNode.getFromStrCache(data.get(0).get(0)));
         rootNode.parentInputPair = new ParentInputPair(null, null);

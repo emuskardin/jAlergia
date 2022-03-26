@@ -8,6 +8,9 @@ import java.util.HashSet;
 import java.util.List;
 
 
+/**
+ * Helper class for parsing input file and writing learned model to file.
+ */
 class Parser{
 
     static String helpDisplayMessage = "Welcome to jAlergia, a minimal Alergia implementation in Java.\n" +
@@ -22,6 +25,11 @@ class Parser{
             "\t-save <saveFileName> - file in which learned model will be saved. Default: jAlergiaModel\n" +
             "\t-optim <optimType> - either mem or acc, to optimize for memory usage or learned model accuracy.";
 
+    /**
+     * Parses the arguments as defined in helpDisplayMessage;
+     * @param args list of arguments
+     * @return List of argument values
+     */
     public static List<Object> parseArgs(String[] args){
         double eps = 0.005;
         ModelType type = null;
@@ -98,6 +106,11 @@ class Parser{
         return Arrays.asList(path, eps, type, saveLocation, optimizeFor);
     }
 
+    /**
+     * Parses file conforming to syntax defined at: https://github.com/emuskardin/jAlergia
+     * @param path path to input file
+     * @return list of lists of strings
+     */
     public static List<List<String>> parseFile(String path){
         List<List<String>> data = new ArrayList<>();
 
@@ -115,6 +128,12 @@ class Parser{
         return data;
     }
 
+    /**
+     * Saves learned model in .dot format. Learned models can be visualized with graphviz and used with AALpy.
+     * @param red Model states
+     * @param modelType either mdp, smm, or mc
+     * @param saveLocation file name
+     */
     public static void saveModel(List<FptaNode> red, ModelType modelType, String saveLocation) {
         FileWriter fw;
         try {

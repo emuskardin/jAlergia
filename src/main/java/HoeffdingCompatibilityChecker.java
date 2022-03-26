@@ -3,6 +3,10 @@ import java.util.Set;
 
 import static java.lang.Math.*;
 
+/**
+ * Compatibility Checker implementing Hoeffding statistical compatibility check as described
+ * in https://link.springer.com/article/10.1007/s10994-016-5565-9;
+ */
 public class HoeffdingCompatibilityChecker implements CompatibilityChecker {
     double epsilon;
     public HoeffdingCompatibilityChecker(double eps){
