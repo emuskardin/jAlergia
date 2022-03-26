@@ -1,7 +1,5 @@
 import java.util.*;
 
-import static java.lang.Math.*;
-
 enum ModelType{
     MDP,
     SMM,
@@ -17,9 +15,8 @@ public class Alergia {
 
     private FptaNode t = null;
     private FptaNode a = null;
-    private double epsilon;
+    private CompatibilityChecker compatibilityChecker;
     private ModelType modelType;
-    private String filePath;
     private final String saveLocation;
     private OptimizeFor optimizeFor;
 
@@ -32,10 +29,32 @@ public class Alergia {
     }
 
     public void runAlergia(List<List<String>> data, ModelType type, double eps, OptimizeFor optim){
-        epsilon = eps;
+        // automatic epsilon computation
+        if(eps == -1){
+            int denominator = 0;
+            for(List<String> d : data)
+                denominator += d.size()- 1;
+            eps = 10. / denominator;
+        }
+
+        compatibilityChecker = new HoeffdingCompatibilityChecker(eps);
         modelType = type;
         optimizeFor = optim;
 
+        constructFPTA(data);
+        runMainAlergiaLoop();
+    }
+
+    public void runAlergia(List<List<String>> data, ModelType type, CompatibilityChecker compChecker, OptimizeFor optim){
+        compatibilityChecker = compChecker;
+        modelType = type;
+        optimizeFor = optim;
+
+        constructFPTA(data);
+        runMainAlergiaLoop();
+    }
+
+    private void constructFPTA(List<List<String>> data){
         double start = System.currentTimeMillis();
         List<FptaNode> ta = FptaNode.constructFPTA(data, modelType, this.optimizeFor);
         double timeElapsed = System.currentTimeMillis() - start;
@@ -44,15 +63,11 @@ public class Alergia {
 
         a = ta.get(0);
         t = ta.get(1);
-
-        start = System.currentTimeMillis();
-        int modelSize = run();
-        timeElapsed = System.currentTimeMillis() - start;
-        System.out.println("Alergia learning time    : " + String.format("%.2f", timeElapsed / 1000) + " seconds.");
-        System.out.println("Alergia learned " + modelSize + " state automaton.");
     }
 
-    private int run() {
+    private void runMainAlergiaLoop() {
+        double start = System.currentTimeMillis();
+
         List<FptaNode> red = new ArrayList<>();
         red.add(a);
         List<FptaNode> blue = new ArrayList<>(a.getSuccessors());
@@ -87,7 +102,9 @@ public class Alergia {
 
         normalize(red);
         Parser.saveModel(red, modelType, saveLocation);
-        return red.size();
+        double timeElapsed = System.currentTimeMillis() - start;
+        System.out.println("Alergia learning time    : " + String.format("%.2f", timeElapsed / 1000) + " seconds.");
+        System.out.println("Alergia learned " + red.size() + " state automaton.");
     }
 
     private void merge(FptaNode r, FptaNode lexMinBlue) {
@@ -115,7 +132,6 @@ public class Alergia {
             }
         }
     }
-
     private boolean compatibilityTest(FptaNode a, FptaNode b){
         if(modelType != ModelType.SMM && !a.output.equals(b.output))
             return false;
@@ -123,7 +139,7 @@ public class Alergia {
         if(a.children.values().isEmpty() || b.children.values().isEmpty())
             return true;
 
-        if(!checkDifference(a,b))
+        if(!compatibilityChecker.checkDifferance(a,b))
             return false;
 
         Set<String> intersection  = new HashSet<>(a.children.keySet());
@@ -131,28 +147,6 @@ public class Alergia {
         for (String child : intersection){
             if(!compatibilityTest(a.children.get(child), b.children.get(child)))
                 return false;
-        }
-
-        return true;
-    }
-
-    private boolean checkDifference(FptaNode a, FptaNode b) {
-        int n1 = a.inputFrequency.values().stream().mapToInt(Integer::intValue).sum();
-        int n2 = b.inputFrequency.values().stream().mapToInt(Integer::intValue).sum();
-
-        if(n1 > 0 && n2 > 0){
-            Set<String> aChildren= a.children.keySet();
-            Set<String> bChildren= b.children.keySet();
-
-            Set<String> union = new HashSet<>(aChildren);
-            union.addAll(bChildren);
-            for(String o : union){
-               double aFreq = a.inputFrequency.getOrDefault(o, 0);
-               double bFreq = b.inputFrequency.getOrDefault(o, 0);
-
-               if(abs(aFreq / n1 - bFreq / n2) > ((sqrt(1./n1) + sqrt(1./n2)) * sqrt(0.5 * log(2 / epsilon))))
-                   return false;
-            }
         }
 
         return true;
@@ -218,7 +212,7 @@ public class Alergia {
 
     public static void usageExample(){
         String path = "sampleFiles/mdpData2.txt";
-        double eps = 0.005;
+        double eps = -1;
         ModelType type = ModelType.MDP;
         String saveLocation = "jAlergiaModel";
         OptimizeFor optimizeFor = OptimizeFor.ACCURACY;
@@ -231,6 +225,7 @@ public class Alergia {
     }
 
     public static void main(String[] args) {
+        usageExample();
         List<Object> argValues = Parser.parseArgs(args);
 
         String path = (String) argValues.get(0);

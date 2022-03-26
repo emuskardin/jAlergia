@@ -44,8 +44,11 @@ class Parser{
                 try {
                     eps = Double.parseDouble(args[i+1]);
                     if(eps > 2 || eps <= 0){
-                        System.out.println("Epsilon values must be a double in range of [2,0>");
-                        System.exit(1);
+                        if(eps != -1) {
+                            System.out.println("Epsilon values must be a double in range of [2,0> " +
+                                    "or -1 for automatic computation of epsilon.");
+                            System.exit(1);
+                        }
                     }
                 } catch (NumberFormatException e) {
                     System.out.println("Epsilon values must be a double in range of [2,0>");
