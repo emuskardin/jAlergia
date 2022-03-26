@@ -1,7 +1,7 @@
 # jAlergia - Alergia passive automaton learning
 
 **jAlergia** is minimal, modular, and efficient implementation of ALERGIA automaton learning algorithm in Java. 
-It is developed without any dependencies and can be used either with your code or from command line. 
+It is developed without any dependencies and can be used either with your code, from command line, or from Python. 
 
 Learned models are saved in the .dot format and can be visualized with [graphviz](https://graphviz.org/) and used with [AALpy](https://github.com/DES-Lab/AALpy).
 AALpy also includes python bindings to jAlergia .jar file.
