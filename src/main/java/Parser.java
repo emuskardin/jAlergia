@@ -141,9 +141,9 @@ class Parser{
             fw.write("digraph g {\n");
             for (FptaNode r: red) {
                 if(modelType != ModelType.SMM)
-                    fw.write(r.stateId + " [shape=\"circle\",label=" + r.output + "];\n");
+                    fw.write(r.stateId + " [shape=\"circle\",label=\"" + r.output + "\"];\n");
                 else
-                    fw.write(r.stateId + " [shape=\"circle\",label=" + r.stateId + "];\n");
+                    fw.write(r.stateId + " [shape=\"circle\",label=\"" + r.stateId + "\"];\n");
             }
             for (FptaNode r: red)
                 for (String io : r.children.keySet()) {
