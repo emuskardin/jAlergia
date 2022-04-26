@@ -175,13 +175,14 @@ public class Alergia {
      * @param blueTreeNode blue node from blue tree
      */
     private void fold(FptaNode red, FptaNode blue, FptaNode blueTreeNode) {
-        for (String io : blueTreeNode.children.keySet()){
+        // TODO find a fix for blueTreeNode
+        for (String io : blue.children.keySet()){
             if(red.children.containsKey(io)){
                 red.inputFrequency.put(io, red.inputFrequency.get(io) + blue.inputFrequency.get(io));
-                fold(red.children.get(io), blue.children.get(io), blueTreeNode.children.get(io));
+                fold(red.children.get(io), blue.children.get(io), blue.children.get(io));
             }else{
                 red.children.put(io, blue.children.get(io));
-                red.inputFrequency.put(io, blueTreeNode.inputFrequency.get(io));
+                red.inputFrequency.put(io, blue.inputFrequency.getOrDefault(io, 0));
             }
         }
     }
