@@ -1,7 +1,7 @@
 import java.util.*;
 
 /**
- * Heper class to keep track of parent nodes. Used for computing prefixes of nodes.
+ * Helper class to keep track of parent nodes. Used for computing prefixes of nodes.
  */
 class ParentInputPair {
     FptaNode parent;
@@ -47,11 +47,11 @@ class FptaNode{
     /**
      * @return path from root node to current node
      */
-    public List<String> getPrefix(){
-        List<String> prefix = new ArrayList<>();
+    public Deque<String> getPrefix(){
+        Deque<String> prefix = new LinkedList<>();
         FptaNode p = this;
-        while (p.parentInputPair.parent != null) {
-            prefix.add(0, p.parentInputPair.inputOutput);
+        while (p.parentInputPair != null) {
+            prefix.addFirst(p.parentInputPair.inputOutput);
             p = p.parentInputPair.parent;
         }
         return prefix;
@@ -73,13 +73,13 @@ class FptaNode{
      */
     public static List<FptaNode> constructFPTA(List<List<String>> data, ModelType modelType, OptimizeFor optimizeFor){
         FptaNode rootNode = new FptaNode(FptaNode.getFromStrCache(data.get(0).get(0)));
-        rootNode.parentInputPair = new ParentInputPair(null, null);
+        rootNode.parentInputPair = null;
 
         FptaNode rootCopy = null;
 
         if(optimizeFor == OptimizeFor.ACCURACY) {
             rootCopy = new FptaNode(FptaNode.getFromStrCache(data.get(0).get(0)));
-            rootCopy.parentInputPair = new ParentInputPair(null, null);
+            rootCopy.parentInputPair = null;
         }
 
         int startingIndex = modelType == ModelType.MDP ? 1 : 0;

@@ -98,7 +98,7 @@ public class Alergia {
         List<FptaNode> ta = FptaNode.constructFPTA(data, modelType, this.optimizeFor);
         double timeElapsed = System.currentTimeMillis() - start;
         System.out.println("FPTA construction time   : " + String.format("%.2f", timeElapsed / 1000) + " seconds.");
-        data = null; // to ensure GC will collect it soon
+        data = null; // to ensure GC will collect it sooner than later
 
         mutableTree = ta.get(0);
         immutableTree = ta.get(1);
@@ -130,16 +130,14 @@ public class Alergia {
                 insertInLexMinSort(red, lexMinBlue);
 
             blue.clear();
-            Set<List<String>> prefixesInRed = new HashSet<>();
-            for(FptaNode r:red)
-                prefixesInRed.add(r.getPrefix());
 
             for(FptaNode r:red){
                 for (FptaNode s : r.getSuccessors()){
-                    if(!prefixesInRed.contains(s.getPrefix()))
+                    if(!red.contains(s))
                         blue.add(s);
                 }
             }
+
         }
 
         normalize(red);
@@ -175,14 +173,13 @@ public class Alergia {
      * @param blueTreeNode blue node from blue tree
      */
     private void fold(FptaNode red, FptaNode blue, FptaNode blueTreeNode) {
-        // TODO find a fix for blueTreeNode
         for (String io : blue.children.keySet()){
             if(red.children.containsKey(io)){
-                red.inputFrequency.put(io, red.inputFrequency.get(io) + blue.inputFrequency.get(io));
-                fold(red.children.get(io), blue.children.get(io), blue.children.get(io));
+                red.inputFrequency.put(io, red.inputFrequency.get(io) + blueTreeNode.inputFrequency.getOrDefault(io, 0));
+                fold(red.children.get(io), blue.children.get(io), getNodeFromT(blue.children.get(io)));
             }else{
                 red.children.put(io, blue.children.get(io));
-                red.inputFrequency.put(io, blue.inputFrequency.getOrDefault(io, 0));
+                red.inputFrequency.put(io, blueTreeNode.inputFrequency.getOrDefault(io, 0));
             }
         }
     }
@@ -220,8 +217,9 @@ public class Alergia {
      */
     private void insertInLexMinSort(List<FptaNode> redList, FptaNode blue){
         int index = 0;
+        int bluePrefixSize = blue.getPrefix().size();
         for (FptaNode r : redList){
-            if(r.getPrefix().size() < blue.getPrefix().size()){
+            if(r.getPrefix().size() < bluePrefixSize){
                 index += 1;
             }else{
                 break;
@@ -294,8 +292,8 @@ public class Alergia {
      * Simple example demonstrating how to use jAlergia.
      */
     public static void usageExample(){
-        String path = "sampleFiles/mdpData3.txt";
-        double eps = -1;
+        String path = "sampleFiles/mdpData6.txt";
+        double eps = 0.005;
         ModelType type = ModelType.MDP;
         String saveLocation = "jAlergiaModel";
         OptimizeFor optimizeFor = OptimizeFor.ACCURACY;
