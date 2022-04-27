@@ -175,13 +175,14 @@ public class Alergia {
      * @param blueTreeNode blue node from blue tree
      */
     private void fold(FptaNode red, FptaNode blue, FptaNode blueTreeNode) {
+        // TODO find a fix for blueTreeNode
         for (String io : blue.children.keySet()){
             if(red.children.containsKey(io)){
                 red.inputFrequency.put(io, red.inputFrequency.get(io) + blue.inputFrequency.get(io));
-                fold(red.children.get(io), blue.children.get(io), getNodeFromT(blue.children.get(io)));
+                fold(red.children.get(io), blue.children.get(io), blue.children.get(io));
             }else{
                 red.children.put(io, blue.children.get(io));
-                red.inputFrequency.put(io, blueTreeNode.inputFrequency.getOrDefault(io, 0));
+                red.inputFrequency.put(io, blue.inputFrequency.getOrDefault(io, 0));
             }
         }
     }
@@ -310,8 +311,6 @@ public class Alergia {
      * @param args argument list defined for command line use. For more details run alergia.jar with -h option.
      */
     public static void main(String[] args) {
-        usageExample();
-
         List<Object> argValues = Parser.parseArgs(args);
 
         String path = (String) argValues.get(0);
