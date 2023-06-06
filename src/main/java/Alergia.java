@@ -197,7 +197,7 @@ public class Alergia {
         if(a.children.values().isEmpty() || b.children.values().isEmpty())
             return true;
 
-        if(compatibilityChecker.areStatesDifferent(a,b))
+        if(compatibilityChecker.areStatesDifferent(a,b, modelType))
             return false;
 
         Set<String> intersection  = new HashSet<>(a.children.keySet());
@@ -309,23 +309,17 @@ public class Alergia {
      * @param args argument list defined for command line use. For more details run alergia.jar with -h option.
      */
     public static void main(String[] args) {
-        List<List<String>> data = Parser.parseFile("sampleFiles/mdpData1.txt");
-        Alergia a = new Alergia("learnedModel");
-        a.runAlergia(data, ModelType.MDP, 0.005, OptimizeFor.ACCURACY);
+        List<Object> argValues = Parser.parseArgs(args);
 
+        String path = (String) argValues.get(0);
+        double eps = (Double) argValues.get(1);
+        ModelType type = (ModelType) argValues.get(2);
+        String saveLocation = (String) argValues.get(3);
+        OptimizeFor optimizeFor = (OptimizeFor) argValues.get(4);
 
+        List<List<String>> data = Parser.parseFile(path);
+        Alergia a = new Alergia(saveLocation);
+        a.runAlergia(data, type, eps, optimizeFor);
         System.exit(0);
-//        List<Object> argValues = Parser.parseArgs(args);
-//
-//        String path = (String) argValues.get(0);
-//        double eps = (Double) argValues.get(1);
-//        ModelType type = (ModelType) argValues.get(2);
-//        String saveLocation = (String) argValues.get(3);
-//        OptimizeFor optimizeFor = (OptimizeFor) argValues.get(4);
-//
-//        List<List<String>> data = Parser.parseFile(path);
-//        Alergia a = new Alergia(saveLocation);
-//        a.runAlergia(data, type, eps, optimizeFor);
-//        System.exit(0);
     }
 }

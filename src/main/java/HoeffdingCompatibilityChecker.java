@@ -17,24 +17,24 @@ public class HoeffdingCompatibilityChecker implements CompatibilityChecker {
     }
 
     @Override
-    public boolean areStatesDifferent(FptaNode a, FptaNode b) {
+    public boolean areStatesDifferent(FptaNode a, FptaNode b, ModelType modelType) {
         // No data available for any node
         if (a.inputFrequency.size() * b.inputFrequency.size() == 0)
             return false;
 
-//        // Assuming tuples are used for IOAlergia and not as Alergia outputs
-//        if (!(a.inputFrequency.keySet().iterator().next() instanceof Tuple)) {
-//            return hoeffdingBound(a.inputFrequency, b.inputFrequency);
-//        }
+        if(modelType == ModelType.MC)
+            return hoeffdingBound(a.inputFrequency, b.inputFrequency);
 
         // check hoeffding bound conditioned on inputs
         Map<String, Map<String, Integer>> aDict = getTwoStageDict(a.inputFrequency);
         Map<String, Map<String, Integer>> bDict = getTwoStageDict(b.inputFrequency);
 
-        for (String key : bDict.keySet().stream().filter(aDict::containsKey).collect(Collectors.toList())) {
-            if (hoeffdingBound(aDict.get(key), bDict.get(key))) {
+        Set<String> inputIntersection = new HashSet<>(aDict.keySet());
+        inputIntersection.retainAll(bDict.keySet());
+
+        for (String key : inputIntersection) {
+            if (hoeffdingBound(aDict.get(key), bDict.get(key)))
                 return true;
-            }
         }
         return false;
     }
@@ -45,12 +45,11 @@ public class HoeffdingCompatibilityChecker implements CompatibilityChecker {
             String[] keys = entry.getKey().split("/");
             String inSym = keys[0];
             String outSym = keys[1];
-            Integer value = entry.getValue();
 
             if (!ret.containsKey(inSym))
                 ret.put(inSym, new HashMap<>());
 
-            ret.get(inSym).put(outSym, value);
+            ret.get(inSym).put(outSym, entry.getValue());
         }
         return ret;
     }
@@ -62,12 +61,12 @@ public class HoeffdingCompatibilityChecker implements CompatibilityChecker {
         if (n1 * n2 == 0)
             return false;
 
-        Set<String> union = new HashSet<>(a.keySet());
-        union.addAll(b.keySet());
+        Set<String> outputUnion = new HashSet<>(a.keySet());
+        outputUnion.addAll(b.keySet());
 
-        for (String o : union) {
-            int aFreq = a.getOrDefault(o, 0);
-            int bFreq = b.getOrDefault(o, 0);
+        for (String o : outputUnion) {
+            double aFreq = a.getOrDefault(o, 0);
+            double bFreq = b.getOrDefault(o, 0);
 
             if (abs(aFreq / n1 - bFreq / n2) > ((sqrt(1. / n1) + sqrt(1. / n2)) * sqrt(0.5 * log(2 / epsilon))))
                 return true;

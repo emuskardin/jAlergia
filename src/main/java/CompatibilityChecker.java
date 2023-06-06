@@ -8,6 +8,6 @@ public interface CompatibilityChecker {
      * @param b Fpta node
      * @return true if nodes are compatible
      */
-    public boolean areStatesDifferent(FptaNode a, FptaNode b);
+    public boolean areStatesDifferent(FptaNode a, FptaNode b, ModelType modelType);
 }
 
