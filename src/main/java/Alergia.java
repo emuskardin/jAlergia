@@ -153,7 +153,6 @@ public class Alergia {
      * @param lexMinBlue blue node
      */
     private void merge(FptaNode r, FptaNode lexMinBlue) {
-        FptaNode blueNode = getNodeFromT(lexMinBlue);
         List<String> prefixLeadingToState = new ArrayList<>(lexMinBlue.getPrefix());
         String lastIo = prefixLeadingToState.remove(prefixLeadingToState.size() - 1);
 
@@ -163,23 +162,22 @@ public class Alergia {
 
         toUpdate.children.put(lastIo, r);
 
-        fold(r, lexMinBlue, blueNode);
+        fold(r, lexMinBlue);
     }
 
     /**
      * Folds blue subtree in red subtree.
      * @param red red node
      * @param blue blue node in red tree
-     * @param blueTreeNode blue node from blue tree
      */
-    private void fold(FptaNode red, FptaNode blue, FptaNode blueTreeNode) {
+    private void fold(FptaNode red, FptaNode blue) {
         for (String io : blue.children.keySet()){
             if(red.children.containsKey(io)){
-                red.inputFrequency.put(io, red.inputFrequency.get(io) + blueTreeNode.inputFrequency.getOrDefault(io, 0));
-                fold(red.children.get(io), blue.children.get(io), getNodeFromT(blue.children.get(io)));
+                red.inputFrequency.put(io, red.inputFrequency.get(io) + blue.inputFrequency.get(io));
+                fold(red.children.get(io), blue.children.get(io));
             }else{
                 red.children.put(io, blue.children.get(io));
-                red.inputFrequency.put(io, blueTreeNode.inputFrequency.getOrDefault(io, 0));
+                red.inputFrequency.put(io, blue.inputFrequency.get(io));
             }
         }
     }
@@ -292,7 +290,7 @@ public class Alergia {
      * Simple example demonstrating how to use jAlergia.
      */
     public static void usageExample(){
-        String path = "sampleFiles/mdpData6.txt";
+        String path = "sampleFiles/mdpData1.txt";
         double eps = 0.005;
         ModelType type = ModelType.MDP;
         String saveLocation = "jAlergiaModel";
