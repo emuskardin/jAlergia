@@ -21,6 +21,20 @@ enum OptimizeFor{
 }
 
 /**
+ * Pair class used for iteratirve folding
+ */
+class Pair<T, U> {
+    public final T first;
+    public final U second;
+
+    public Pair(T first, U second) {
+        this.first = first;
+        this.second = second;
+    }
+
+}
+
+/**
  * Class implementing Alergia passive learning algorithm as described in
  * "Learning deterministic probabilistic automata from a model checking perspective"
  * (https://link.springer.com/article/10.1007/s10994-016-5565-9).
@@ -129,6 +143,13 @@ public class Alergia {
             if(!merged)
                 insertInLexMinSort(red, lexMinBlue);
 
+            List<Integer> prefixLength = new ArrayList<>();
+            for (FptaNode node : red)
+                prefixLength.add(node.prefix.size());
+
+            assert prefixLength.stream().allMatch(i -> i.equals(prefixLength.get(0)) ||
+                    i >= prefixLength.get(prefixLength.indexOf(i) - 1)) : "The list is not sorted";
+
             blue.clear();
 
             for(FptaNode r:red){
@@ -153,7 +174,7 @@ public class Alergia {
      * @param lexMinBlue blue node
      */
     private void merge(FptaNode r, FptaNode lexMinBlue) {
-        List<String> prefixLeadingToState = new ArrayList<>(lexMinBlue.getPrefix());
+        List<String> prefixLeadingToState = new ArrayList<>(lexMinBlue.prefix);
         String lastIo = prefixLeadingToState.remove(prefixLeadingToState.size() - 1);
 
         FptaNode toUpdate = mutableTree;
@@ -167,19 +188,29 @@ public class Alergia {
 
     /**
      * Folds blue subtree in red subtree.
-     * @param red red node
-     * @param blue blue node in red tree
+     * @param redSubtreeRoot red node
+     * @param blueSubtreeRoot blue node in red tree
      */
-    private void fold(FptaNode red, FptaNode blue) {
-        for (String io : blue.children.keySet()){
-            if(red.children.containsKey(io)){
-                red.inputFrequency.put(io, red.inputFrequency.get(io) + blue.inputFrequency.get(io));
-                fold(red.children.get(io), blue.children.get(io));
-            }else{
-                red.children.put(io, blue.children.get(io));
-                red.inputFrequency.put(io, blue.inputFrequency.get(io));
+    private void fold(FptaNode redSubtreeRoot, FptaNode blueSubtreeRoot) {
+        Queue<Pair<FptaNode, FptaNode>> queue = new LinkedList<>();
+        queue.add(new Pair<>(redSubtreeRoot, blueSubtreeRoot));
+
+        while (!queue.isEmpty()) {
+            Pair<FptaNode, FptaNode> fptaPair = queue.poll();
+            FptaNode red = fptaPair.first;
+            FptaNode blue = fptaPair.second;
+
+            for (String io : blue.children.keySet()){
+                if (red.children.containsKey(io)) {
+                    red.inputFrequency.put(io, red.inputFrequency.get(io) + blue.inputFrequency.get(io));
+                    queue.add(new Pair<>(red.children.get(io), blue.children.get(io)));
+                } else {
+                    red.children.put(io, blue.children.get(io));
+                    red.inputFrequency.put(io, blue.inputFrequency.get(io));
+                }
             }
         }
+
     }
 
     /**
@@ -215,11 +246,11 @@ public class Alergia {
      */
     private void insertInLexMinSort(List<FptaNode> redList, FptaNode blue){
         int index = 0;
-        int bluePrefixSize = blue.getPrefix().size();
         for (FptaNode r : redList){
-            if(r.getPrefix().size() < bluePrefixSize){
+            if(r.compareTo(blue) < 0) {
                 index += 1;
-            }else{
+            }
+            else{
                 break;
             }
         }
@@ -234,7 +265,7 @@ public class Alergia {
     private FptaNode getLexMin(List<FptaNode> x){
         FptaNode min = x.get(0);
         for (FptaNode node: x) {
-            if(node.getPrefix().size() < min.getPrefix().size())
+            if(node.compareTo(min) < 0)
                 min = node;
         }
         return min;
@@ -250,7 +281,7 @@ public class Alergia {
             return redNode;
 
         FptaNode blueNode = immutableTree;
-        for(String p : redNode.getPrefix())
+        for(String p : redNode.prefix)
             blueNode = blueNode.children.get(p);
         return blueNode;
     }
@@ -272,15 +303,9 @@ public class Alergia {
                 for (String io : r.inputFrequency.keySet())
                     r.childrenProbability.put(io, r.inputFrequency.get(io).doubleValue() / totalOutput);
             }else{
-                HashMap<String, Double> outputsPerInput = new HashMap<>();
                 for (String io : r.inputFrequency.keySet()) {
                     List<String> inputAndOutput = Arrays.asList(io.split("/"));
-                    outputsPerInput.put(inputAndOutput.get(0), r.inputFrequency.get(io) +
-                            outputsPerInput.getOrDefault(inputAndOutput.get(0), 0.));
-                }
-                for (String io : r.inputFrequency.keySet()) {
-                    List<String> inputAndOutput = Arrays.asList(io.split("/"));
-                    r.childrenProbability.put(io, r.inputFrequency.get(io) / outputsPerInput.get(inputAndOutput.get(0)));
+                    r.childrenProbability.put(io, (double) (r.inputFrequency.get(io) / r.getInputFrequency(inputAndOutput.get(0))));
                 }
             }
         }
@@ -290,8 +315,8 @@ public class Alergia {
      * Simple example demonstrating how to use jAlergia.
      */
     public static void usageExample(){
-        String path = "sampleFiles/mdpData1.txt";
-        double eps = 0.005;
+        String path = "sampleFiles/mdpData_size_30.txt";
+        double eps = 0.05;
         ModelType type = ModelType.MDP;
         String saveLocation = "jAlergiaModel";
         OptimizeFor optimizeFor = OptimizeFor.ACCURACY;
@@ -307,6 +332,8 @@ public class Alergia {
      * @param args argument list defined for command line use. For more details run alergia.jar with -h option.
      */
     public static void main(String[] args) {
+        usageExample();
+
         List<Object> argValues = Parser.parseArgs(args);
 
         String path = (String) argValues.get(0);
