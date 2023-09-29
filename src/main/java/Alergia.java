@@ -290,8 +290,8 @@ public class Alergia {
      * Simple example demonstrating how to use jAlergia.
      */
     public static void usageExample(){
-        String path = "sampleFiles/mdpData1.txt";
-        double eps = 0.005;
+        String path = "sampleFiles/mdpData_size_50.txt";
+        double eps = 0.05;
         ModelType type = ModelType.MDP;
         String saveLocation = "jAlergiaModel";
         OptimizeFor optimizeFor = OptimizeFor.ACCURACY;
@@ -307,6 +307,7 @@ public class Alergia {
      * @param args argument list defined for command line use. For more details run alergia.jar with -h option.
      */
     public static void main(String[] args) {
+        usageExample();
         List<Object> argValues = Parser.parseArgs(args);
 
         String path = (String) argValues.get(0);
