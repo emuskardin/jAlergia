@@ -21,21 +21,18 @@ class Parser{
             "\t-input <pathToInputFile> - file needs to conform to above mentioned syntax\n" +
             "\t-type <modelType> - either mdp, smm, or mc; If you want to learn Markov Decision Process, Stochastic Mealy Machine, or Markov Chain\n" +
             "Optional arguments\n" +
-            "\t-eps <doubleVal> - value of the epsilon constant in Hoeffding compatibility check. Default: 0.005\n" +
-            "\t-save <saveFileName> - file in which learned model will be saved. Default: jAlergiaModel\n" +
-            "\t-optim <optimType> - either mem or acc, to optimize for memory usage or learned model accuracy.";
-
+            "\t-eps <doubleVal> - value of the epsilon constant in Hoeffding compatibility check. Default: 0.05\n" +
+            "\t-save <saveFileName> - file in which learned model will be saved. Default: jAlergiaModel";
     /**
      * Parses the arguments as defined in helpDisplayMessage;
      * @param args list of arguments
      * @return List of argument values
      */
     public static List<Object> parseArgs(String[] args){
-        double eps = 0.005;
+        double eps = 0.05;
         ModelType type = null;
         String path = null;
         String saveLocation = "jAlergiaModel";
-        OptimizeFor optimizeFor = OptimizeFor.ACCURACY;
 
         HashSet<String> argNames = new HashSet<>(Arrays.asList("-eps", "-input", "-type", "-save", "-optim"));
         if(args.length == 0 || args[0].equals("-help") || args[0].equals("-h") || args[0].equals("--help")){
@@ -83,16 +80,6 @@ class Parser{
             }
             if(args[i].equals("-save"))
                 saveLocation = args[i+1];
-            if(args[i].equals("-optim")){
-                if(args[i+1].equals("mem"))
-                    optimizeFor = OptimizeFor.MEMORY;
-                else if (args[i+1].equals("acc"))
-                    optimizeFor = OptimizeFor.ACCURACY;
-                else {
-                    System.out.println("Invalid optimize for option, set to accuracy optimization.");
-                    optimizeFor = OptimizeFor.ACCURACY;
-                }
-            }
         }
 
         if(path==null) {
@@ -103,7 +90,7 @@ class Parser{
             System.out.println("Automaton type not specified. For more details use -h option.");
             System.exit(1);
         }
-        return Arrays.asList(path, eps, type, saveLocation, optimizeFor);
+        return Arrays.asList(path, eps, type, saveLocation, null);
     }
 
     /**

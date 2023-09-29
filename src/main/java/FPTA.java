@@ -12,6 +12,7 @@ class ParentInputPair {
     }
 }
 
+
 /**
  * Frequency prefix tree acceptor (FPTA) node class.
  * Each node hold references to its children and other needed information.
@@ -19,10 +20,15 @@ class ParentInputPair {
 class FptaNode{
     public static HashMap<String, String> stringCache = new HashMap<>();
 
-    public String output;
+    public final String output;
+    public ParentInputPair parentInputPair;
+
+    // mutable
     public Map<String, FptaNode> children;
     public Map<String, Integer> inputFrequency;
-    public ParentInputPair parentInputPair;
+    // immutable
+    public Map<String, FptaNode> immutableChildren;
+    public Map<String, Integer> immutableInputFrequency;
 
     // for writing to file
     public String stateId;
@@ -32,6 +38,76 @@ class FptaNode{
         this.output = o;
         this.children = new TreeMap<>();
         this.inputFrequency = new TreeMap<>();
+
+        this.immutableChildren = new TreeMap<>();
+        this.immutableInputFrequency = new TreeMap<>();
+    }
+
+
+    public Set<String> getInputs(boolean immutable){
+        Map<String, Integer> frequencyMap = immutable ? immutableInputFrequency : inputFrequency;
+        Set<String> inputs = new HashSet<>();
+        for (String key : frequencyMap.keySet()) {
+            String input = Arrays.asList(key.split("/")).get(0);
+            inputs.add(input);
+        }
+        return inputs;
+    }
+
+    public int getInputFrequency(String targetInput, boolean immutable) {
+        Map<String, Integer> frequencyMap = immutable ? immutableInputFrequency : inputFrequency;
+        int frequency = 0;
+        for (Map.Entry<String, Integer> entry : frequencyMap.entrySet()) {
+            String input = Arrays.asList(entry.getKey().split("/")).get(0);
+            int freq = entry.getValue();
+            if (input.equals(targetInput))
+                frequency += freq;
+        }
+        return frequency;
+    }
+
+    public Map<String, Integer> getOutputFrequencies(String targetInput, boolean immutable) {
+        Map<String, Integer> frequencyMap = immutable ? immutableInputFrequency : inputFrequency;
+        Map<String, Integer> outputFrequencies = new HashMap<>();
+        for (Map.Entry<String, Integer> entry : frequencyMap.entrySet()) {
+            List<String> inputOutputPair = Arrays.asList(entry.getKey().split("/"));
+            String input = inputOutputPair.get(0);
+            String output = inputOutputPair.get(1);
+            if (input.equals(targetInput))
+                outputFrequencies.put(output, entry.getValue());
+        }
+        return outputFrequencies;
+    }
+
+    public int compareTo(FptaNode other) {
+        // First, compare the lengths of prefix lists
+        int lengthComparison = Integer.compare(this.getPrefix().size(), other.getPrefix().size());
+        if (lengthComparison != 0) {
+            return lengthComparison;
+        }
+
+        // If lengths are equal, compare the strings at each index lexicographically
+        for (int i = 0; i < this.getPrefix().size(); i++) {
+            int strComparison = this.getPrefix().get(i).compareTo(other.getPrefix().get(i));
+            if (strComparison != 0)
+                return strComparison;
+        }
+
+        // If both lengths and strings are equal, the objects are considered equal
+        return 0;
+    }
+
+    /**
+     * @return path from root node to current node
+     */
+    public List<String> getPrefix(){
+        Deque<String> prefix = new LinkedList<>();
+        FptaNode p = this;
+        while (p.parentInputPair != null) {
+            prefix.addFirst(p.parentInputPair.inputOutput);
+            p = p.parentInputPair.parent;
+        }
+        return new ArrayList<>(prefix);
     }
 
     /**
@@ -45,19 +121,6 @@ class FptaNode{
     }
 
     /**
-     * @return path from root node to current node
-     */
-    public Deque<String> getPrefix(){
-        Deque<String> prefix = new LinkedList<>();
-        FptaNode p = this;
-        while (p.parentInputPair != null) {
-            prefix.addFirst(p.parentInputPair.inputOutput);
-            p = p.parentInputPair.parent;
-        }
-        return prefix;
-    }
-
-    /**
      * @return successor of the node
      */
     public Collection<? extends FptaNode> getSuccessors() {
@@ -68,26 +131,19 @@ class FptaNode{
      * Construct mutable and immutable trees.
      * @param data list of lists of strings conforming to syntax defined at https://github.com/emuskardin/jAlergia
      * @param modelType mdp, smm, or mc
-     * @param optimizeFor if optimize for memory is used, only mutable tree will be created
      * @return mutable and immutable trees (second tree is set to null in case of memory optimization)
      */
-    public static List<FptaNode> constructFPTA(List<List<String>> data, ModelType modelType, OptimizeFor optimizeFor){
+    public static FptaNode constructFPTA(List<List<String>> data, ModelType modelType){
+
         FptaNode rootNode = new FptaNode(FptaNode.getFromStrCache(data.get(0).get(0)));
         rootNode.parentInputPair = null;
 
-        FptaNode rootCopy = null;
-
-        if(optimizeFor == OptimizeFor.ACCURACY) {
-            rootCopy = new FptaNode(FptaNode.getFromStrCache(data.get(0).get(0)));
-            rootCopy.parentInputPair = null;
-        }
-
-        int startingIndex = modelType == ModelType.MDP ? 1 : 0;
+        int startingIndex = modelType != ModelType.SMM ? 1 : 0;
         int incrementSize = modelType == ModelType.MC ? 1 : 2;
 
-        for (List<String> sample : data) {
+        while (!data.isEmpty()){
+            List<String> sample = data.remove(0);
             FptaNode currNode = rootNode;
-            FptaNode currCopy = rootCopy;
 
             if (modelType != ModelType.SMM) {
                 if (!sample.get(0).equals(rootNode.output)) {
@@ -101,35 +157,32 @@ class FptaNode{
 
             for (int i = startingIndex; i < sample.size() - 1; i += incrementSize) {
                 String io = modelType != ModelType.MC ? sample.get(i) + '/' + sample.get(i + 1) : sample.get(i);
+                
                 io = FptaNode.getFromStrCache(io);
+
                 if (!currNode.children.containsKey(io)) {
-                    String output = FptaNode.getFromStrCache(sample.get(i + startingIndex));
+                    String output = FptaNode.getFromStrCache(sample.get(modelType == ModelType.MC ? i : i + startingIndex));
+
                     FptaNode node = new FptaNode(output);
                     node.parentInputPair = new ParentInputPair(currNode, io);
+
                     currNode.children.put(io, node);
                     currNode.inputFrequency.put(io, 0);
 
-                    // Copy
-                    if (optimizeFor == OptimizeFor.ACCURACY) {
-                        FptaNode copy = new FptaNode(output);
-                        copy.parentInputPair = new ParentInputPair(currCopy, io);
-                        currCopy.children.put(io, copy);
-                        currCopy.inputFrequency.put(io, 0);
-                    }
+                    currNode.immutableChildren.put(io, node);
+                    currNode.immutableInputFrequency.put(io, 0);
+
                 }
 
                 currNode.inputFrequency.put(io, currNode.inputFrequency.get(io) + 1);
+                currNode.immutableInputFrequency.put(io, currNode.immutableInputFrequency.get(io) + 1);
+
                 currNode = currNode.children.get(io);
 
-                // Copy
-                if (optimizeFor == OptimizeFor.ACCURACY) {
-                    currCopy.inputFrequency.put(io, currCopy.inputFrequency.get(io) + 1);
-                    currCopy = currCopy.children.get(io);
-                }
             }
         }
 
-        return Arrays.asList(rootNode, rootCopy);
+        return rootNode;
     }
 
 }
