@@ -35,7 +35,6 @@ class Parser{
         ModelType type = null;
         String path = null;
         String saveLocation = "jAlergiaModel";
-        OptimizeFor optimizeFor = OptimizeFor.ACCURACY;
 
         HashSet<String> argNames = new HashSet<>(Arrays.asList("-eps", "-input", "-type", "-save", "-optim"));
         if(args.length == 0 || args[0].equals("-help") || args[0].equals("-h") || args[0].equals("--help")){
@@ -83,16 +82,6 @@ class Parser{
             }
             if(args[i].equals("-save"))
                 saveLocation = args[i+1];
-            if(args[i].equals("-optim")){
-                if(args[i+1].equals("mem"))
-                    optimizeFor = OptimizeFor.MEMORY;
-                else if (args[i+1].equals("acc"))
-                    optimizeFor = OptimizeFor.ACCURACY;
-                else {
-                    System.out.println("Invalid optimize for option, set to accuracy optimization.");
-                    optimizeFor = OptimizeFor.ACCURACY;
-                }
-            }
         }
 
         if(path==null) {
@@ -103,7 +92,7 @@ class Parser{
             System.out.println("Automaton type not specified. For more details use -h option.");
             System.exit(1);
         }
-        return Arrays.asList(path, eps, type, saveLocation, optimizeFor);
+        return Arrays.asList(path, eps, type, saveLocation, null);
     }
 
     /**

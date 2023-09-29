@@ -21,17 +21,17 @@ public class HoeffdingCompatibilityChecker implements CompatibilityChecker {
     @Override
     public boolean areStatesDifferent(FptaNode a, FptaNode b, ModelType modelType) {
         // No data available for any node
-        if (a.inputFrequency.size() * b.inputFrequency.size() == 0)
+        if (a.immutableInputFrequency.size() * b.immutableInputFrequency.size() == 0)
             return false;
 
         if(modelType == ModelType.MC)
-            return hoeffdingBound(a.inputFrequency, b.inputFrequency);
+            return hoeffdingBound(a.immutableInputFrequency, b.immutableInputFrequency);
 
-        Set<String> inputIntersection = new HashSet<>(a.getInputs());
-        inputIntersection.retainAll(b.getInputs());
+        Set<String> inputIntersection = new HashSet<>(a.getInputs(true));
+        inputIntersection.retainAll(b.getInputs(true));
 
         for (String key : inputIntersection) {
-            if (hoeffdingBound(a.getOutputFrequencies(key), b.getOutputFrequencies(key)))
+            if (hoeffdingBound(a.getOutputFrequencies(key, true), b.getOutputFrequencies(key,true)))
                 return true;
         }
         return false;

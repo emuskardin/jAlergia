@@ -12,16 +12,7 @@ enum ModelType{
 }
 
 /**
- * MEMORY makes Alergia work with the single tree, thus requiring half the memory size, but at the expanse of accuracy
- * ACCURACY uses both trees, mutable and immutable
- */
-enum OptimizeFor{
-    MEMORY,
-    ACCURACY
-}
-
-/**
- * Pair class used for iteratirve folding
+ * Pair class used for iterative folding and compatibility test
  */
 class Pair<T, U> {
     public final T first;
@@ -42,11 +33,9 @@ class Pair<T, U> {
 public class Alergia {
 
     private FptaNode mutableTree = null;
-    private FptaNode immutableTree = null;
     private CompatibilityChecker compatibilityChecker;
     private ModelType modelType;
     private final String saveLocation;
-    private OptimizeFor optimizeFor;
 
     /**
      * Default constructor. Model will be saved to "jAlergiaModel.dot".
@@ -68,9 +57,8 @@ public class Alergia {
      * @param data input data
      * @param type model type
      * @param eps epsilon value for HoeffdingCompatibilityChecker
-     * @param optim optimization method
      */
-    public void runAlergia(List<List<String>> data, ModelType type, double eps, OptimizeFor optim){
+    public void runAlergia(List<List<String>> data, ModelType type, double eps){
         // automatic epsilon computation
         if(eps == -1){
             int denominator = 0;
@@ -81,7 +69,6 @@ public class Alergia {
 
         compatibilityChecker = new HoeffdingCompatibilityChecker(eps);
         modelType = type;
-        optimizeFor = optim;
 
         constructFPTA(data);
         runMainAlergiaLoop();
@@ -92,12 +79,10 @@ public class Alergia {
      * @param data input data
      * @param type model type
      * @param compChecker instance of CompatibilityChecker implementation
-     * @param optim optimization method
      */
-    public void runAlergia(List<List<String>> data, ModelType type, CompatibilityChecker compChecker, OptimizeFor optim){
+    public void runAlergia(List<List<String>> data, ModelType type, CompatibilityChecker compChecker){
         compatibilityChecker = compChecker;
         modelType = type;
-        optimizeFor = optim;
 
         constructFPTA(data);
         runMainAlergiaLoop();
@@ -109,13 +94,11 @@ public class Alergia {
      */
     private void constructFPTA(List<List<String>> data){
         double start = System.currentTimeMillis();
-        List<FptaNode> ta = FptaNode.constructFPTA(data, modelType, this.optimizeFor);
+        mutableTree = FptaNode.constructFPTA(data, modelType);
         double timeElapsed = System.currentTimeMillis() - start;
         System.out.println("FPTA construction time   : " + String.format("%.2f", timeElapsed / 1000) + " seconds.");
         data = null; // to ensure GC will collect it sooner than later
 
-        mutableTree = ta.get(0);
-        immutableTree = ta.get(1);
     }
 
     /**
@@ -133,7 +116,7 @@ public class Alergia {
             boolean merged = false;
 
             for (FptaNode r : red){
-                if(compatibilityTest(getNodeFromT(r), getNodeFromT(lexMinBlue))){
+                if(compatibilityTest(r, lexMinBlue)){
                     merge(r, lexMinBlue);
                     merged = true;
                     break;
@@ -215,25 +198,32 @@ public class Alergia {
 
     /**
      * Check compatibility between nodes and their children.
-     * @param a Fpta node
-     * @param b Fpta node
+     * @param redSubtree Fpta node
+     * @param blueSubtree Fpta node
      * @return True if a and b are compatible
      */
-    private boolean compatibilityTest(FptaNode a, FptaNode b){
-        if(modelType != ModelType.SMM && !a.output.equals(b.output))
-            return false;
+    private boolean compatibilityTest(FptaNode redSubtree, FptaNode blueSubtree){
+        Queue<Pair<FptaNode, FptaNode>> queue = new LinkedList<>();
+        queue.add(new Pair<>(redSubtree, blueSubtree));
 
-        if(a.children.values().isEmpty() || b.children.values().isEmpty())
-            return true;
+        while (!queue.isEmpty()) {
+            Pair<FptaNode, FptaNode> nodesUnderTest = queue.poll();
+            FptaNode a = nodesUnderTest.first;
+            FptaNode b = nodesUnderTest.second;
 
-        if(compatibilityChecker.areStatesDifferent(a,b, modelType))
-            return false;
-
-        Set<String> intersection  = new HashSet<>(a.children.keySet());
-        intersection.retainAll(b.children.keySet());
-        for (String child : intersection){
-            if(!compatibilityTest(a.children.get(child), b.children.get(child)))
+            if (modelType != ModelType.SMM && !a.output.equals(b.output))
                 return false;
+
+            if (a.immutableChildren == null || b.immutableChildren == null)
+                continue;
+
+            if (compatibilityChecker.areStatesDifferent(a, b, modelType))
+                return false;
+
+            Set<String> intersection = new HashSet<>(a.immutableChildren.keySet());
+            intersection.retainAll(b.immutableChildren.keySet());
+            for (String child : intersection)
+                queue.add(new Pair<>(a.immutableChildren.get(child), b.immutableChildren.get(child)));
         }
 
         return true;
@@ -271,21 +261,6 @@ public class Alergia {
         return min;
     }
 
-    /**
-     * Get node from immutable tree if optimizeFor is set to ACCURACY.
-     * @param redNode node in a mutable tree
-     * @return matching node in immutable tree if optimization is set to accuracy, or red node if memory optimization is used
-     */
-    private FptaNode getNodeFromT(FptaNode redNode){
-        if(optimizeFor == OptimizeFor.MEMORY)
-            return redNode;
-
-        FptaNode blueNode = immutableTree;
-        for(String p : redNode.prefix)
-            blueNode = blueNode.children.get(p);
-        return blueNode;
-    }
-
 
     /**
      * Normalizes probabilities of final states, that it assigns probabilities to transitions for each state.
@@ -305,7 +280,8 @@ public class Alergia {
             }else{
                 for (String io : r.inputFrequency.keySet()) {
                     List<String> inputAndOutput = Arrays.asList(io.split("/"));
-                    r.childrenProbability.put(io, (double) (r.inputFrequency.get(io) / r.getInputFrequency(inputAndOutput.get(0))));
+                    r.childrenProbability.put(io, (double) (r.inputFrequency.get(io) /
+                            r.getInputFrequency(inputAndOutput.get(0), false)));
                 }
             }
         }
@@ -315,15 +291,14 @@ public class Alergia {
      * Simple example demonstrating how to use jAlergia.
      */
     public static void usageExample(){
-        String path = "sampleFiles/mdpData_size_30.txt";
+        String path = "sampleFiles/smmData_size_10.txt";
         double eps = 0.05;
-        ModelType type = ModelType.MDP;
+        ModelType type = ModelType.SMM;
         String saveLocation = "jAlergiaModel";
-        OptimizeFor optimizeFor = OptimizeFor.ACCURACY;
 
         List<List<String>> data = Parser.parseFile(path);
         Alergia a = new Alergia(saveLocation);
-        a.runAlergia(data, type, eps, optimizeFor);
+        a.runAlergia(data, type, eps);
 
         System.exit(0);
     }
@@ -332,19 +307,16 @@ public class Alergia {
      * @param args argument list defined for command line use. For more details run alergia.jar with -h option.
      */
     public static void main(String[] args) {
-        usageExample();
-
         List<Object> argValues = Parser.parseArgs(args);
 
         String path = (String) argValues.get(0);
         double eps = (Double) argValues.get(1);
         ModelType type = (ModelType) argValues.get(2);
         String saveLocation = (String) argValues.get(3);
-        OptimizeFor optimizeFor = (OptimizeFor) argValues.get(4);
 
         List<List<String>> data = Parser.parseFile(path);
         Alergia a = new Alergia(saveLocation);
-        a.runAlergia(data, type, eps, optimizeFor);
+        a.runAlergia(data, type, eps);
         System.exit(0);
     }
 }
