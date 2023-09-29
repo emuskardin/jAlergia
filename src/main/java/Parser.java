@@ -21,7 +21,7 @@ class Parser{
             "\t-input <pathToInputFile> - file needs to conform to above mentioned syntax\n" +
             "\t-type <modelType> - either mdp, smm, or mc; If you want to learn Markov Decision Process, Stochastic Mealy Machine, or Markov Chain\n" +
             "Optional arguments\n" +
-            "\t-eps <doubleVal> - value of the epsilon constant in Hoeffding compatibility check. Default: 0.005\n" +
+            "\t-eps <doubleVal> - value of the epsilon constant in Hoeffding compatibility check. Default: 0.00\n" +
             "\t-save <saveFileName> - file in which learned model will be saved. Default: jAlergiaModel\n" +
             "\t-optim <optimType> - either mem or acc, to optimize for memory usage or learned model accuracy.";
 
@@ -31,7 +31,7 @@ class Parser{
      * @return List of argument values
      */
     public static List<Object> parseArgs(String[] args){
-        double eps = 0.005;
+        double eps = 0.05;
         ModelType type = null;
         String path = null;
         String saveLocation = "jAlergiaModel";

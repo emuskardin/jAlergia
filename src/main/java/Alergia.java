@@ -128,7 +128,7 @@ public class Alergia {
 
             List<Integer> prefixLength = new ArrayList<>();
             for (FptaNode node : red)
-                prefixLength.add(node.prefix.size());
+                prefixLength.add(node.getPrefix().size());
 
             assert prefixLength.stream().allMatch(i -> i.equals(prefixLength.get(0)) ||
                     i >= prefixLength.get(prefixLength.indexOf(i) - 1)) : "The list is not sorted";
@@ -157,7 +157,7 @@ public class Alergia {
      * @param lexMinBlue blue node
      */
     private void merge(FptaNode r, FptaNode lexMinBlue) {
-        List<String> prefixLeadingToState = new ArrayList<>(lexMinBlue.prefix);
+        List<String> prefixLeadingToState = new ArrayList<>(lexMinBlue.getPrefix());
         String lastIo = prefixLeadingToState.remove(prefixLeadingToState.size() - 1);
 
         FptaNode toUpdate = mutableTree;
@@ -291,9 +291,9 @@ public class Alergia {
      * Simple example demonstrating how to use jAlergia.
      */
     public static void usageExample(){
-        String path = "sampleFiles/smmData_size_10.txt";
+        String path = "sampleFiles/mdpData_size_50.txt";
         double eps = 0.05;
-        ModelType type = ModelType.SMM;
+        ModelType type = ModelType.MDP;
         String saveLocation = "jAlergiaModel";
 
         List<List<String>> data = Parser.parseFile(path);

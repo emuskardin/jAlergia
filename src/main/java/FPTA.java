@@ -1,11 +1,27 @@
 import java.util.*;
 
+/**
+ * Helper class to keep track of parent nodes. Used for computing prefixes of nodes.
+ */
+class ParentInputPair {
+    FptaNode parent;
+    String inputOutput;
+    public ParentInputPair(FptaNode p, String io){
+        parent = p;
+        inputOutput = io;
+    }
+}
 
+
+/**
+ * Frequency prefix tree acceptor (FPTA) node class.
+ * Each node hold references to its children and other needed information.
+ */
 class FptaNode{
     public static HashMap<String, String> stringCache = new HashMap<>();
 
     public final String output;
-    public final List<String> prefix;
+    public ParentInputPair parentInputPair;
 
     // mutable
     public Map<String, FptaNode> children;
@@ -18,9 +34,8 @@ class FptaNode{
     public String stateId;
     public Map<String, Double> childrenProbability;
 
-    public FptaNode(String o, List<String> prefix){
+    public FptaNode(String o){
         this.output = o;
-        this.prefix = prefix;
         this.children = new TreeMap<>();
         this.inputFrequency = new TreeMap<>();
 
@@ -66,20 +81,33 @@ class FptaNode{
 
     public int compareTo(FptaNode other) {
         // First, compare the lengths of prefix lists
-        int lengthComparison = Integer.compare(this.prefix.size(), other.prefix.size());
+        int lengthComparison = Integer.compare(this.getPrefix().size(), other.getPrefix().size());
         if (lengthComparison != 0) {
             return lengthComparison;
         }
 
         // If lengths are equal, compare the strings at each index lexicographically
-        for (int i = 0; i < this.prefix.size(); i++) {
-            int strComparison = this.prefix.get(i).compareTo(other.prefix.get(i));
+        for (int i = 0; i < this.getPrefix().size(); i++) {
+            int strComparison = this.getPrefix().get(i).compareTo(other.getPrefix().get(i));
             if (strComparison != 0)
                 return strComparison;
         }
 
         // If both lengths and strings are equal, the objects are considered equal
         return 0;
+    }
+
+    /**
+     * @return path from root node to current node
+     */
+    public List<String> getPrefix(){
+        Deque<String> prefix = new LinkedList<>();
+        FptaNode p = this;
+        while (p.parentInputPair != null) {
+            prefix.addFirst(p.parentInputPair.inputOutput);
+            p = p.parentInputPair.parent;
+        }
+        return new ArrayList<>(prefix);
     }
 
     /**
@@ -107,7 +135,8 @@ class FptaNode{
      */
     public static FptaNode constructFPTA(List<List<String>> data, ModelType modelType){
 
-        FptaNode rootNode = new FptaNode(FptaNode.getFromStrCache(data.get(0).get(0)), new ArrayList<>());
+        FptaNode rootNode = new FptaNode(FptaNode.getFromStrCache(data.get(0).get(0)));
+        rootNode.parentInputPair = null;
 
         int startingIndex = modelType != ModelType.SMM ? 1 : 0;
         int incrementSize = modelType == ModelType.MC ? 1 : 2;
@@ -134,10 +163,8 @@ class FptaNode{
                 if (!currNode.children.containsKey(io)) {
                     String output = FptaNode.getFromStrCache(sample.get(modelType == ModelType.MC ? i : i + startingIndex));
 
-                    List<String> newPrefix = new ArrayList<>(currNode.prefix);
-                    newPrefix.add(io);
-
-                    FptaNode node = new FptaNode(output, newPrefix);
+                    FptaNode node = new FptaNode(output);
+                    node.parentInputPair = new ParentInputPair(currNode, io);
 
                     currNode.children.put(io, node);
                     currNode.inputFrequency.put(io, 0);
