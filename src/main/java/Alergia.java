@@ -307,7 +307,6 @@ public class Alergia {
      * @param args argument list defined for command line use. For more details run alergia.jar with -h option.
      */
     public static void main(String[] args) {
-        usageExample();
         List<Object> argValues = Parser.parseArgs(args);
 
         String path = (String) argValues.get(0);
