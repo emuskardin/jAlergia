@@ -280,7 +280,7 @@ public class Alergia {
             }else{
                 for (String io : r.inputFrequency.keySet()) {
                     List<String> inputAndOutput = Arrays.asList(io.split("/"));
-                    r.childrenProbability.put(io, (double) (r.inputFrequency.get(io) /
+                    r.childrenProbability.put(io, (r.inputFrequency.get(io).doubleValue() /
                             r.getInputFrequency(inputAndOutput.get(0), false)));
                 }
             }
