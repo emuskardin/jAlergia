@@ -2,10 +2,10 @@ plugins {
     id 'java'
 }
 
-group 'emuskardin'
+group = 'emuskardin'
 
 jar {
-    destinationDir = file("$rootDir")
+    destinationDirectory = file("$rootDir")
     manifest {
         attributes 'Main-Class': 'Alergia'
     }
